@@ -4,6 +4,7 @@ package lg.sec.loginsecurity;
 
 import lg.sec.loginsecurity.commands.CommandsManager;
 import lg.sec.loginsecurity.database.SQLManager;
+import lg.sec.loginsecurity.listeners.ListenersManager;
 import lombok.Getter;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -24,6 +25,9 @@ public final class LoginSecurity extends JavaPlugin {
 
     @Getter
     private static LoginSecurity instance;
+
+    @Getter
+    private ListenersManager listenersManager;
 
     @Getter
     private SQLManager sqlManager;
@@ -50,6 +54,7 @@ public final class LoginSecurity extends JavaPlugin {
         sqlManager = new SQLManager();
         sqlManager.init();
         new CommandsManager().init();
+        this.listenersManager.init();
         enablingMessage();
     }
 
