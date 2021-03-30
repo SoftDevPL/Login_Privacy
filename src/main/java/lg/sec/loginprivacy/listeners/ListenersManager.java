@@ -1,4 +1,4 @@
-package lg.sec.loginsecurity.listeners;
+package lg.sec.loginprivacy.listeners;
 
 public class ListenersManager {
 

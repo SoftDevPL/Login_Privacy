@@ -1,6 +1,6 @@
-package lg.sec.loginsecurity.database;
+package lg.sec.loginprivacy.database;
 
-import lg.sec.loginsecurity.LoginSecurity;
+import lg.sec.loginprivacy.LoginPrivacy;
 import lombok.SneakyThrows;
 
 import java.io.File;
@@ -14,7 +14,7 @@ public class CustomSQLInterface {
     public String databaseUrl;
     public String databaseName;
     public File database;
-    protected LoginSecurity plugin;
+    protected LoginPrivacy plugin;
     protected boolean ok = true;
 
     public static void close(Statement statement) {
@@ -32,7 +32,7 @@ public class CustomSQLInterface {
     }
 
     protected void init(String filename, boolean create) {
-        this.plugin = LoginSecurity.getInstance();
+        this.plugin = LoginPrivacy.getInstance();
         this.databaseName = filename + ".db";
         this.databaseUrl = "jdbc:sqlite:" + "plugins/" + this.plugin.getDataFolder().getName() + "/" + this.databaseName;
         database = new File(this.plugin.getDataFolder(), this.databaseName);
@@ -84,12 +84,12 @@ public class CustomSQLInterface {
     public void createNewDatabase() {
         this.databaseUrl = "jdbc:sqlite:" + "plugins/" + this.plugin.getDataFolder().getName() + "/" + this.databaseName;
         try (Connection conn = DriverManager.getConnection(this.databaseUrl)) {
-            LoginSecurity.getInstance().logger.info(" ");
-            LoginSecurity.getInstance().logger.info("==> Database Initialization <==");
+            LoginPrivacy.getInstance().logger.info(" ");
+            LoginPrivacy.getInstance().logger.info("==> Database Initialization <==");
             if (conn != null) {
-                LoginSecurity.getInstance().logger.info(LoginSecurity.ANSI_CYAN + this.databaseName + LoginSecurity.ANSI_GREEN + " -> database has been created!" + LoginSecurity.ANSI_RESET);
+                LoginPrivacy.getInstance().logger.info(LoginPrivacy.ANSI_CYAN + this.databaseName + LoginPrivacy.ANSI_GREEN + " -> database has been created!" + LoginPrivacy.ANSI_RESET);
             } else {
-                LoginSecurity.getInstance().logger.info(LoginSecurity.ANSI_CYAN + this.databaseName + LoginSecurity.ANSI_GREEN + " -> database has been loaded successfully!" + LoginSecurity.ANSI_RESET);
+                LoginPrivacy.getInstance().logger.info(LoginPrivacy.ANSI_CYAN + this.databaseName + LoginPrivacy.ANSI_GREEN + " -> database has been loaded successfully!" + LoginPrivacy.ANSI_RESET);
             }
 
         } catch (SQLException e) {

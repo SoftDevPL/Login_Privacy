@@ -1,10 +1,10 @@
-package lg.sec.loginsecurity;
+package lg.sec.loginprivacy;
 
 
 
-import lg.sec.loginsecurity.commands.CommandsManager;
-import lg.sec.loginsecurity.database.SQLManager;
-import lg.sec.loginsecurity.listeners.ListenersManager;
+import lg.sec.loginprivacy.commands.CommandsManager;
+import lg.sec.loginprivacy.database.SQLManager;
+import lg.sec.loginprivacy.listeners.ListenersManager;
 import lombok.Getter;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -14,7 +14,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.logging.Logger;
 
-public final class LoginSecurity extends JavaPlugin {
+public final class LoginPrivacy extends JavaPlugin {
 
     public final Logger logger =  Logger.getLogger("");
     public static final String ANSI_RESET = "\u001b[0m";
@@ -24,7 +24,7 @@ public final class LoginSecurity extends JavaPlugin {
     public static final String ANSI_GREEN = "\u001b[32m";
 
     @Getter
-    private static LoginSecurity instance;
+    private static LoginPrivacy instance;
 
     @Getter
     private ListenersManager listenersManager;

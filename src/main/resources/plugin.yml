@@ -1,5 +1,14 @@
 name: LoginSecurity
 version: ${project.version}
-main: lg.sec.loginsecurity.LoginSecurity
+main: lg.sec.loginprivacy.LoginPrivacy
 authors: [ Devie ]
 description: Simple authentication plugin!
+commands:
+  login:
+    usage: /login [password]
+    description: Login to your server account
+    permission: lg.sec.loginprivacy.login
+  register:
+    usage: /register [password] [password]
+    description: Register to your server account
+    permission: lg.sec.loginprivacy.register

@@ -1,4 +1,4 @@
-package lg.sec.loginsecurity.database;
+package lg.sec.loginprivacy.database;
 
 
 import lombok.Getter;
