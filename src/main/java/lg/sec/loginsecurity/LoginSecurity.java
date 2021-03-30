@@ -5,6 +5,7 @@ package lg.sec.loginsecurity;
 import lg.sec.loginsecurity.commands.CommandsManager;
 import lg.sec.loginsecurity.database.SQLManager;
 import lombok.Getter;
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Server;
 import org.bukkit.plugin.PluginDescriptionFile;
@@ -18,8 +19,8 @@ public final class LoginSecurity extends JavaPlugin {
     public static final String ANSI_RESET = "\u001b[0m";
     public static final String ANSI_RED = "\u001b[31m";
     public static final String ANSI_CYAN = "\u001b[36m";
+    public static final String ANSI_BRIGHT_CYAN = "\u001b[36;1m";
     public static final String ANSI_GREEN = "\u001b[32m";
-    public static final String ANSI_BRIGHT_GREEN = "\u001b[32;1m";
 
     @Getter
     private static LoginSecurity instance;
@@ -59,10 +60,38 @@ public final class LoginSecurity extends JavaPlugin {
 
 
     private void enablingMessage() {
-
+        logger.info(" ");
+        logger.info(ANSI_BRIGHT_CYAN + "            `7MMF'      " + ANSI_CYAN + "`7MM\"\"\"Mq." + ANSI_RESET);
+        logger.info(ANSI_BRIGHT_CYAN + "              MM        " + ANSI_CYAN + "  MM   `MM." + ANSI_RESET);
+        logger.info(ANSI_BRIGHT_CYAN + "              MM        " + ANSI_CYAN + "  MM   ,M9" + ANSI_RESET);
+        logger.info(ANSI_BRIGHT_CYAN + "              MM        " + ANSI_CYAN + "  MMmmdM9" + ANSI_RESET);
+        logger.info(ANSI_BRIGHT_CYAN + "              MM      , " + ANSI_CYAN + "  MM" + ANSI_RESET);
+        logger.info(ANSI_BRIGHT_CYAN + "              MM     ,M " + ANSI_CYAN + "  MM" + ANSI_RESET);
+        logger.info(ANSI_BRIGHT_CYAN + "            .JMMmmmmMMM" + ANSI_CYAN + " .JMML." + ANSI_RESET);
+        logger.info(" ");
+        logger.info("         LoginSecurity v"+ getPluginVersion());
+        logger.info("         Running on Spigot - " + getMinecraftVersion(Bukkit.getServer()));
+        logger.info("         Made by DevieTeam");
+        logger.info(" ");
+        logger.info("         Action: " + ANSI_GREEN +"Plugin Enabled!" + ANSI_RESET);
+        logger.info(" ");
     }
 
     private void disablingMessage() {
-
+        logger.info(" ");
+        logger.info(ANSI_BRIGHT_CYAN + "            `7MMF'      " + ANSI_CYAN + "`7MM\"\"\"Mq." + ANSI_RESET);
+        logger.info(ANSI_BRIGHT_CYAN + "              MM        " + ANSI_CYAN + "  MM   `MM." + ANSI_RESET);
+        logger.info(ANSI_BRIGHT_CYAN + "              MM        " + ANSI_CYAN + "  MM   ,M9" + ANSI_RESET);
+        logger.info(ANSI_BRIGHT_CYAN + "              MM        " + ANSI_CYAN + "  MMmmdM9" + ANSI_RESET);
+        logger.info(ANSI_BRIGHT_CYAN + "              MM      , " + ANSI_CYAN + "  MM" + ANSI_RESET);
+        logger.info(ANSI_BRIGHT_CYAN + "              MM     ,M " + ANSI_CYAN + "  MM" + ANSI_RESET);
+        logger.info(ANSI_BRIGHT_CYAN + "            .JMMmmmmMMM" + ANSI_CYAN + " .JMML." + ANSI_RESET);
+        logger.info(" ");
+        logger.info("         LoginSecurity v"+ getPluginVersion());
+        logger.info("         Running on Spigot - " + getMinecraftVersion(Bukkit.getServer()));
+        logger.info("         Made by DevieTeam");
+        logger.info(" ");
+        logger.info("         Action: " + ANSI_RED + "Disabling...." + ANSI_RESET);
+        logger.info(" ");
     }
 }
