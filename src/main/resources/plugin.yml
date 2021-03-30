@@ -1,0 +1,5 @@
+name: LoginSecurity
+version: ${project.version}
+main: lg.sec.loginsecurity.LoginSecurity
+authors: [ Devie ]
+description: Simple authentication plugin!
