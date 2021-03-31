@@ -1,12 +1,10 @@
 package lg.sec.loginprivacy.database;
-
-
 import lombok.Getter;
 
 public class SQLManager {
 
     @Getter
-    private Database database;
+    private final Database database;
 
     public SQLManager() {
         this.database = new Database();

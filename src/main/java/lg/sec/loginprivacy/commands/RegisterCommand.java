@@ -1,7 +1,6 @@
 package lg.sec.loginprivacy.commands;
 
 import lg.sec.loginprivacy.LoginPrivacy;
-import lg.sec.loginprivacy.listeners.events.LoginEvent;
 import lg.sec.loginprivacy.listeners.events.RegisterEvent;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
@@ -19,7 +18,7 @@ public class RegisterCommand implements CommandExecutor {
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        if(!(sender instanceof Player)){
+        if (!(sender instanceof Player)) {
             sender.sendMessage(LoginPrivacy.convertColors("&cOnly player can execute this command"));
             return true;
         }
@@ -31,7 +30,7 @@ public class RegisterCommand implements CommandExecutor {
             if (args[0].equals(args[1])) {
                 Bukkit.getPluginManager().callEvent(new RegisterEvent(player, args[0], command));
             } else {
-               sender.sendMessage("Passwords must match");
+                sender.sendMessage("Passwords must match");
             }
             return true;
         }

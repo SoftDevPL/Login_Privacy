@@ -6,9 +6,6 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
 
-import java.util.UUID;
-
-
 public class LoginEvent extends Event {
 
     private static final HandlerList HANDLER_LIST = new HandlerList();
@@ -25,12 +22,12 @@ public class LoginEvent extends Event {
         this.player = player;
     }
 
-    @Override
-    public HandlerList getHandlers() {
+    public static HandlerList getHandlerList() {
         return HANDLER_LIST;
     }
 
-    public static HandlerList getHandlerList() {
+    @Override
+    public HandlerList getHandlers() {
         return HANDLER_LIST;
     }
 }

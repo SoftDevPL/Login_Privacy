@@ -11,6 +11,4 @@ public class ListenersManager {
     public void init() {
         this.authListener.init();
     }
-
-
 }

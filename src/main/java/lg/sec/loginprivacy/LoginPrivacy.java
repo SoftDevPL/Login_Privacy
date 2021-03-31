@@ -75,7 +75,7 @@ public final class LoginPrivacy extends JavaPlugin {
         logger.info(ANSI_BRIGHT_CYAN + "              MM     ,M " + ANSI_CYAN + "  MM" + ANSI_RESET);
         logger.info(ANSI_BRIGHT_CYAN + "            .JMMmmmmMMM" + ANSI_CYAN + " .JMML." + ANSI_RESET);
         logger.info(" ");
-        logger.info("         LoginSecurity v"+ getPluginVersion());
+        logger.info("         LoginPrivacy v"+ getPluginVersion());
         logger.info("         Running on Spigot - " + getMinecraftVersion(Bukkit.getServer()));
         logger.info("         Made by DevieTeam");
         logger.info(" ");
@@ -93,7 +93,7 @@ public final class LoginPrivacy extends JavaPlugin {
         logger.info(ANSI_BRIGHT_CYAN + "              MM     ,M " + ANSI_CYAN + "  MM" + ANSI_RESET);
         logger.info(ANSI_BRIGHT_CYAN + "            .JMMmmmmMMM" + ANSI_CYAN + " .JMML." + ANSI_RESET);
         logger.info(" ");
-        logger.info("         LoginSecurity v"+ getPluginVersion());
+        logger.info("         LoginPrivacy v"+ getPluginVersion());
         logger.info("         Running on Spigot - " + getMinecraftVersion(Bukkit.getServer()));
         logger.info("         Made by DevieTeam");
         logger.info(" ");

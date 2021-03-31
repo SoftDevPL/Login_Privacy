@@ -11,6 +11,7 @@ import org.bukkit.entity.Player;
 public class LoginCommand implements CommandExecutor {
 
     private final LoginPrivacy loginPrivacy;
+
     public LoginCommand(LoginPrivacy plugin) {
         this.loginPrivacy = plugin;
 
@@ -18,7 +19,7 @@ public class LoginCommand implements CommandExecutor {
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        if(!(sender instanceof Player)){
+        if (!(sender instanceof Player)) {
             sender.sendMessage(LoginPrivacy.convertColors("&cOnly player can execute this command"));
             return true;
         }

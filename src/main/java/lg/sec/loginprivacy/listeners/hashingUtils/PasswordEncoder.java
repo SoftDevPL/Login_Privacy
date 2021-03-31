@@ -6,5 +6,7 @@ public interface PasswordEncoder {
 
     boolean matches(CharSequence rawPassword, String encodedPassword);
 
-    default boolean upgradeEncoding(String encodedPassword) { return false; }
+    default boolean upgradeEncoding(String encodedPassword) {
+        return false;
+    }
 }

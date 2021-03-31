@@ -1,7 +1,6 @@
 package lg.sec.loginprivacy.listeners;
 
 import lg.sec.loginprivacy.LoginPrivacy;
-import lg.sec.loginprivacy.commands.CommandsManager;
 import lg.sec.loginprivacy.database.Database;
 import lg.sec.loginprivacy.listeners.events.LoginEvent;
 import lg.sec.loginprivacy.listeners.events.RegisterEvent;
@@ -12,14 +11,12 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.player.*;
-import org.bukkit.scheduler.BukkitRunnable;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 public class AuthListener implements Listener {
 
+    private final Map<UUID, Integer> scheduledTimers = new HashMap<>();
     private LoginPrivacy loginPrivacy;
     private List<UUID> loggedPlayers = new ArrayList<>();
     private Database database;
@@ -29,11 +26,7 @@ public class AuthListener implements Listener {
         this.database = this.loginPrivacy.getSqlManager().getDatabase();
         this.loginPrivacy.getServer().getPluginManager().registerEvents(this, this.loginPrivacy);
         this.loggedPlayers = this.database.getAllPlayersFromSession();
-
-
-
     }
-
 
     private boolean login(UUID uuid, String rawPassword) {
         String hashedPassword = this.database.getPlayerHashedPasswordByUUID(uuid);
@@ -45,12 +38,20 @@ public class AuthListener implements Listener {
 
     @EventHandler
     private void onJoin(PlayerJoinEvent event) {
+        boolean isRegistered = this.database.playerIsRegistered(event.getPlayer().getUniqueId());
+        if (this.database.playerIsInSession(event.getPlayer().getUniqueId())) {
+            scheduledTimers.remove(event.getPlayer().getUniqueId());
+            loggedPlayers.remove(event.getPlayer().getUniqueId());
+        }
         int id = LoginPrivacy.getInstance().getServer().getScheduler().scheduleSyncRepeatingTask(this.loginPrivacy, () -> {
-            if (!loggedPlayers.contains(event.getPlayer().getUniqueId())) {
-                event.getPlayer().sendMessage("You need to log in");
+            if (isRegistered) {
+                event.getPlayer().sendMessage("You need to login /login [password]");
+            } else {
+                event.getPlayer().sendMessage("You need to register first /register [password] [password]");
             }
-        }, 0, 20);
 
+        }, 0, 50);
+        scheduledTimers.put(event.getPlayer().getUniqueId(), id);
     }
 
     @EventHandler
@@ -59,6 +60,8 @@ public class AuthListener implements Listener {
         if (login(event.getPlayer().getUniqueId(), event.getPassword())) {
             if (!database.playerIsInSession(event.getPlayer().getUniqueId())) {
                 this.database.addPlayerToSession(event.getPlayer().getUniqueId());
+                LoginPrivacy.getInstance().getServer().getScheduler().cancelTask(scheduledTimers.get(event.getPlayer().getUniqueId()));
+                scheduledTimers.remove(event.getPlayer().getUniqueId());
                 event.getPlayer().sendMessage(LoginPrivacy.convertColors("&ayou logged in"));
             } else {
                 event.getPlayer().sendMessage(LoginPrivacy.convertColors("&eyou already logged in"));
@@ -85,6 +88,11 @@ public class AuthListener implements Listener {
         String hashedPassword = new PasswordHarsher().encode(event.getMatchedPassword());
         if (!database.playerIsRegistered(event.getPlayer().getUniqueId())) {
             this.database.registerPlayerInDatabase(event.getPlayer().getUniqueId(), hashedPassword);
+            this.database.addPlayerToSession(event.getPlayer().getUniqueId());
+            LoginPrivacy.getInstance().getServer().getScheduler().cancelTask(scheduledTimers.get(event.getPlayer().getUniqueId()));
+            scheduledTimers.remove(event.getPlayer().getUniqueId());
+            this.loggedPlayers.clear();
+            this.loggedPlayers = this.database.getAllPlayersFromSession();
             event.getPlayer().sendMessage(LoginPrivacy.convertColors("&aYou successfully registered"));
         } else {
             event.getPlayer().sendMessage(LoginPrivacy.convertColors("&eYou are already registered"));
@@ -94,7 +102,7 @@ public class AuthListener implements Listener {
     @EventHandler(ignoreCancelled = true)
     private void onMove(PlayerMoveEvent event) {
         if (!loggedPlayers.contains(event.getPlayer().getUniqueId())) {
-          event.setCancelled(true);
+            event.setCancelled(true);
         }
     }
 
@@ -125,6 +133,4 @@ public class AuthListener implements Listener {
             event.setCancelled(true);
         }
     }
-
-
 }
