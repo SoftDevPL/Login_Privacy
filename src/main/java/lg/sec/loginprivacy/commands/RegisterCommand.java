@@ -23,13 +23,15 @@ public class RegisterCommand implements CommandExecutor {
             sender.sendMessage(LoginPrivacy.convertColors("&cOnly player can execute this command"));
             return true;
         }
-        if (args.length == 0) {
+        if (args.length != 2) {
             sender.sendMessage(CommandsManager.getDescription(label, command));
         }
-        if (args.length > 0) {
+        if (args.length == 2) {
             Player player = (Player) sender;
             if (args[0].equals(args[1])) {
                 Bukkit.getPluginManager().callEvent(new RegisterEvent(player, player.getUniqueId(), args[0]));
+            } else {
+               sender.sendMessage("Passwords must match");
             }
             return true;
         }

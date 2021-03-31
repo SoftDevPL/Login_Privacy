@@ -101,6 +101,11 @@ public class Database extends CustomSQLInterface {
         return new Worker<String>().getSomething(rs -> rs.getString(this.password), sql);
     }
 
+    public boolean playerIsInSession(UUID playerUUID) {
+        String sql = "SELECT * FROM " + sessionTable + " WHERE " + this.playerUUID + " = " + "\"" + playerUUID.toString() + "\"";
+        return new Worker<Boolean>().getSomething(ResultSet::next, sql);
+    }
+
     public void addPlayerToSession(UUID playerUUID) {
         String sql = "INSERT INTO " + sessionTable + " (" + this.playerUUID + ") VALUES(?)";
         insertSomething(pstmt -> pstmt.setString(1, playerUUID.toString()), sql);

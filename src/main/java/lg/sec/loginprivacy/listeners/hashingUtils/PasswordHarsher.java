@@ -10,9 +10,9 @@ import java.security.SecureRandom;
 public class PasswordHarsher implements PasswordEncoder {
 
     private static final String PBKDF2_ALGORITHM = "PBKDF2WithHmacSHA1";
-    private static final int SALT_BYTES = 32;
-    private static final int HASH_BYTES = 32;
-    private static final int PBKDF2_ITERATIONS = 342593;
+    private static final int SALT_BYTES = 16;
+    private static final int HASH_BYTES = 16;
+    private static final int PBKDF2_ITERATIONS = 3425;
     private static final int ITERATION_INDEX = 0;
     private static final int SALT_INDEX = 1;
     private static final int PBKDF2_INDEX = 2;
