@@ -91,6 +91,11 @@ public class Database extends CustomSQLInterface {
         }, sql);
     }
 
+    public boolean playerIsRegistered(UUID playerUUID) {
+        String sql = "SELECT * FROM " + passwordTable + " WHERE " + this.playerUUID + " = " + "\"" + playerUUID + "\"";
+        return new Worker<Boolean>().getSomething(ResultSet::next, sql);
+    }
+
     public String getPlayerHashedPasswordByUUID(UUID playerUUID) {
         String sql = "SELECT * FROM " + this.passwordTable + " WHERE " + this.playerUUID + " = " + "\"" + playerUUID.toString() + "\"";
         return new Worker<String>().getSomething(rs -> rs.getString(this.password), sql);

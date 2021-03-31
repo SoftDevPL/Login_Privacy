@@ -51,10 +51,11 @@ public final class LoginPrivacy extends JavaPlugin {
     @Override
     public void onEnable() {
         instance = this;
+        listenersManager = new ListenersManager();
         sqlManager = new SQLManager();
         sqlManager.init();
         new CommandsManager().init();
-        this.listenersManager.init();
+        listenersManager.init();
         enablingMessage();
     }
 
