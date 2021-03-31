@@ -1,18 +1,18 @@
 package lg.sec.loginprivacy.listeners;
 
 import lg.sec.loginprivacy.LoginPrivacy;
+import lg.sec.loginprivacy.commands.CommandsManager;
 import lg.sec.loginprivacy.database.Database;
 import lg.sec.loginprivacy.listeners.events.LoginEvent;
 import lg.sec.loginprivacy.listeners.events.RegisterEvent;
 import lg.sec.loginprivacy.listeners.hashingUtils.PasswordHarsher;
+import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
-import org.bukkit.event.entity.EntityDamageEvent;
-import org.bukkit.event.entity.PlayerDeathEvent;
-import org.bukkit.event.player.PlayerCommandPreprocessEvent;
-import org.bukkit.event.player.PlayerMoveEvent;
-import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.event.player.*;
+import org.bukkit.scheduler.BukkitRunnable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -29,7 +29,11 @@ public class AuthListener implements Listener {
         this.database = this.loginPrivacy.getSqlManager().getDatabase();
         this.loginPrivacy.getServer().getPluginManager().registerEvents(this, this.loginPrivacy);
         this.loggedPlayers = this.database.getAllPlayersFromSession();
+
+
+
     }
+
 
     private boolean login(UUID uuid, String rawPassword) {
         String hashedPassword = this.database.getPlayerHashedPasswordByUUID(uuid);
@@ -40,19 +44,29 @@ public class AuthListener implements Listener {
     }
 
     @EventHandler
+    private void onJoin(PlayerJoinEvent event) {
+        int id = LoginPrivacy.getInstance().getServer().getScheduler().scheduleSyncRepeatingTask(this.loginPrivacy, () -> {
+            if (!loggedPlayers.contains(event.getPlayer().getUniqueId())) {
+                event.getPlayer().sendMessage("You need to log in");
+            }
+        }, 0, 20);
+
+    }
+
+    @EventHandler
     private void onLogin(LoginEvent event) {
-        event.getPlayer().sendMessage("Checking....");
-        if (login(event.getUuid(), event.getPassword())) {
+        event.getPlayer().sendMessage(LoginPrivacy.convertColors("&eChecking...."));
+        if (login(event.getPlayer().getUniqueId(), event.getPassword())) {
             if (!database.playerIsInSession(event.getPlayer().getUniqueId())) {
-                this.database.addPlayerToSession(event.getUuid());
-                event.getPlayer().sendMessage("you logged in");
+                this.database.addPlayerToSession(event.getPlayer().getUniqueId());
+                event.getPlayer().sendMessage(LoginPrivacy.convertColors("&ayou logged in"));
             } else {
-                event.getPlayer().sendMessage("you already logged in");
+                event.getPlayer().sendMessage(LoginPrivacy.convertColors("&eyou already logged in"));
             }
             this.loggedPlayers.clear();
             this.loggedPlayers = this.database.getAllPlayersFromSession();
         } else {
-            event.getPlayer().sendMessage("Wrong Password");
+            event.getPlayer().sendMessage(LoginPrivacy.convertColors("&cWrong Password"));
         }
     }
 
@@ -67,34 +81,50 @@ public class AuthListener implements Listener {
 
     @EventHandler
     private void onRegister(RegisterEvent event) {
-        event.getPlayer().sendMessage("Checking....");
+        event.getPlayer().sendMessage(LoginPrivacy.convertColors("&eChecking...."));
         String hashedPassword = new PasswordHarsher().encode(event.getMatchedPassword());
-        if (!database.playerIsRegistered(event.getUuid())) {
-            this.database.registerPlayerInDatabase(event.getUuid(), hashedPassword);
-            event.getPlayer().sendMessage("You successfully registered");
+        if (!database.playerIsRegistered(event.getPlayer().getUniqueId())) {
+            this.database.registerPlayerInDatabase(event.getPlayer().getUniqueId(), hashedPassword);
+            event.getPlayer().sendMessage(LoginPrivacy.convertColors("&aYou successfully registered"));
         } else {
-            event.getPlayer().sendMessage("You are already registered");
+            event.getPlayer().sendMessage(LoginPrivacy.convertColors("&eYou are already registered"));
         }
     }
 
-    @EventHandler
+    @EventHandler(ignoreCancelled = true)
     private void onMove(PlayerMoveEvent event) {
         if (!loggedPlayers.contains(event.getPlayer().getUniqueId())) {
           event.setCancelled(true);
         }
     }
 
-    @EventHandler
+    @EventHandler(ignoreCancelled = true)
     private void onBlockBreak(BlockBreakEvent event) {
         if (!loggedPlayers.contains(event.getPlayer().getUniqueId())) {
             event.setCancelled(true);
         }
     }
 
-    @EventHandler
-    private void EntityDamageEvent(EntityDamageEvent event) {
-        if (!loggedPlayers.contains(event.getEntity().getUniqueId())) {
+    @EventHandler(ignoreCancelled = true)
+    private void chatEvent(AsyncPlayerChatEvent event) {
+        if (!loggedPlayers.contains(event.getPlayer().getUniqueId())) {
             event.setCancelled(true);
         }
     }
+
+    @EventHandler(ignoreCancelled = true)
+    private void interactEvent(PlayerInteractEvent event) {
+        if (!loggedPlayers.contains(event.getPlayer().getUniqueId())) {
+            event.setCancelled(true);
+        }
+    }
+
+    @EventHandler(ignoreCancelled = true)
+    private void damageEvent(EntityDamageByEntityEvent event) {
+        if (event.getDamager() instanceof Player && !loggedPlayers.contains(event.getDamager().getUniqueId())) {
+            event.setCancelled(true);
+        }
+    }
+
+
 }
