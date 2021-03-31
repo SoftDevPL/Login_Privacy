@@ -38,8 +38,12 @@ public class AuthListener implements Listener {
     }
 
     private void addSchedulersToAllOnlinePlayersOnReload() {
-        for (Player player: Bukkit.getOnlinePlayers()) {
-            cleanOldSession(player);
+        if (!this.authDisabled) {
+            for (Player player : Bukkit.getOnlinePlayers()) {
+                if (!database.playerIsInSession(player.getUniqueId())) {
+                    specifyLoginMessage(player);
+                }
+            }
         }
     }
 
@@ -55,9 +59,9 @@ public class AuthListener implements Listener {
         boolean isRegistered = this.database.playerIsRegistered(player.getUniqueId());
         int id = LoginPrivacy.getInstance().getServer().getScheduler().scheduleSyncRepeatingTask(this.loginPrivacy, () -> {
             if (isRegistered) {
-                player.sendMessage("You need to login /login [password]");
+                player.sendMessage(LoginPrivacy.convertColors("&fYou need to login: &e&l/login [password]"));
             } else {
-                player.sendMessage("You need to register first /register [password] [password]");
+                player.sendMessage(LoginPrivacy.convertColors("&fYou need to register first: \n &e&l/register [password] [password]"));
             }
 
         }, 0, this.joinMessageDelay);
@@ -82,23 +86,22 @@ public class AuthListener implements Listener {
     @EventHandler
     private void onLogin(LoginEvent event) {
         if (!this.authDisabled) {
-            event.getPlayer().sendMessage(LoginPrivacy.convertColors("&eChecking...."));
             if (login(event.getPlayer().getUniqueId(), event.getPassword())) {
                 if (!database.playerIsInSession(event.getPlayer().getUniqueId())) {
                     this.database.addPlayerToSession(event.getPlayer().getUniqueId());
                     LoginPrivacy.getInstance().getServer().getScheduler().cancelTask(scheduledTimers.get(event.getPlayer().getUniqueId()));
                     scheduledTimers.remove(event.getPlayer().getUniqueId());
-                    event.getPlayer().sendMessage(LoginPrivacy.convertColors("&ayou logged in"));
+                    event.getPlayer().sendMessage(LoginPrivacy.convertColors("&aYou successfully logged in"));
                 } else {
-                    event.getPlayer().sendMessage(LoginPrivacy.convertColors("&eyou already logged in"));
+                    event.getPlayer().sendMessage(LoginPrivacy.convertColors("&cYou already logged in!"));
                 }
                 this.loggedPlayers.clear();
                 this.loggedPlayers = this.database.getAllPlayersFromSession();
             } else {
-                event.getPlayer().sendMessage(LoginPrivacy.convertColors("&cWrong Password"));
+                event.getPlayer().sendMessage(LoginPrivacy.convertColors("&4Wrong Password"));
             }
         } else {
-            event.getPlayer().sendMessage("Auth is Disabled");
+            event.getPlayer().sendMessage(LoginPrivacy.convertColors("&cAuth is Disabled"));
         }
     }
 
@@ -114,7 +117,6 @@ public class AuthListener implements Listener {
     @EventHandler
     private void onRegister(RegisterEvent event) {
         if (!this.authDisabled) {
-            event.getPlayer().sendMessage(LoginPrivacy.convertColors("&eChecking...."));
             String hashedPassword = new PasswordHarsher().encode(event.getMatchedPassword());
             if (!database.playerIsRegistered(event.getPlayer().getUniqueId())) {
                 this.database.registerPlayerInDatabase(event.getPlayer().getUniqueId(), hashedPassword);
@@ -128,7 +130,7 @@ public class AuthListener implements Listener {
                 event.getPlayer().sendMessage(LoginPrivacy.convertColors("&eYou are already registered"));
             }
         } else {
-            event.getPlayer().sendMessage("Auth is Disabled");
+            event.getPlayer().sendMessage(LoginPrivacy.convertColors("&cAuth is Disabled"));
         }
     }
 

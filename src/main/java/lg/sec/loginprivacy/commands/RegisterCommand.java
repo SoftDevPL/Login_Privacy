@@ -30,7 +30,7 @@ public class RegisterCommand implements CommandExecutor {
             if (args[0].equals(args[1])) {
                 Bukkit.getPluginManager().callEvent(new RegisterEvent(player, args[0], command));
             } else {
-                sender.sendMessage("Passwords must match");
+                sender.sendMessage(LoginPrivacy.convertColors("&cPasswords must match"));
             }
             return true;
         }
