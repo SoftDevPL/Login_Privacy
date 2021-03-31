@@ -6,6 +6,7 @@ import lg.sec.loginprivacy.listeners.events.LoginEvent;
 import lg.sec.loginprivacy.listeners.events.RegisterEvent;
 import lg.sec.loginprivacy.listeners.hashingUtils.PasswordHarsher;
 import lg.sec.loginprivacy.resourcesConfigGenerator.AuthConfigurationConfig;
+import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -33,6 +34,13 @@ public class AuthListener implements Listener {
         this.database = this.loginPrivacy.getSqlManager().getDatabase();
         this.loginPrivacy.getServer().getPluginManager().registerEvents(this, this.loginPrivacy);
         this.loggedPlayers = this.database.getAllPlayersFromSession();
+        addSchedulersToAllOnlinePlayersOnReload();
+    }
+
+    private void addSchedulersToAllOnlinePlayersOnReload() {
+        for (Player player: Bukkit.getOnlinePlayers()) {
+            cleanOldSession(player);
+        }
     }
 
     private boolean login(UUID uuid, String rawPassword) {
@@ -43,24 +51,32 @@ public class AuthListener implements Listener {
         return new PasswordHarsher().matches(rawPassword, hashedPassword);
     }
 
-    @EventHandler
-    private void onJoin(PlayerJoinEvent event) {
-        if (this.database.playerIsInSession(event.getPlayer().getUniqueId())) {
-            scheduledTimers.remove(event.getPlayer().getUniqueId());
-            loggedPlayers.remove(event.getPlayer().getUniqueId());
+    private void specifyLoginMessage(Player player) {
+        boolean isRegistered = this.database.playerIsRegistered(player.getUniqueId());
+        int id = LoginPrivacy.getInstance().getServer().getScheduler().scheduleSyncRepeatingTask(this.loginPrivacy, () -> {
+            if (isRegistered) {
+                player.sendMessage("You need to login /login [password]");
+            } else {
+                player.sendMessage("You need to register first /register [password] [password]");
+            }
+
+        }, 0, this.joinMessageDelay);
+        scheduledTimers.put(player.getUniqueId(), id);
+    }
+
+    private void cleanOldSession(Player player) {
+        if (this.database.playerIsInSession(player.getUniqueId())) {
+            scheduledTimers.remove(player.getUniqueId());
+            loggedPlayers.remove(player.getUniqueId());
         }
         if (!this.authDisabled) {
-            boolean isRegistered = this.database.playerIsRegistered(event.getPlayer().getUniqueId());
-            int id = LoginPrivacy.getInstance().getServer().getScheduler().scheduleSyncRepeatingTask(this.loginPrivacy, () -> {
-                if (isRegistered) {
-                    event.getPlayer().sendMessage("You need to login /login [password]");
-                } else {
-                    event.getPlayer().sendMessage("You need to register first /register [password] [password]");
-                }
-
-            }, 0, this.joinMessageDelay);
-            scheduledTimers.put(event.getPlayer().getUniqueId(), id);
+            specifyLoginMessage(player);
         }
+    }
+
+    @EventHandler
+    private void onJoin(PlayerJoinEvent event) {
+        cleanOldSession(event.getPlayer());
     }
 
     @EventHandler
