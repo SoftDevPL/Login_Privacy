@@ -27,7 +27,7 @@ public class LoginCommand implements CommandExecutor {
         }
         if (args.length > 0) {
             Player player = (Player) sender;
-            Bukkit.getPluginManager().callEvent(new LoginEvent(player.getUniqueId(), args[0]));
+            Bukkit.getPluginManager().callEvent(new LoginEvent(player, player.getUniqueId(), args[0]));
             return true;
         }
         return true;

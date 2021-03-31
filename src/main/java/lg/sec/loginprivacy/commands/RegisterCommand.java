@@ -28,7 +28,9 @@ public class RegisterCommand implements CommandExecutor {
         }
         if (args.length > 0) {
             Player player = (Player) sender;
-            Bukkit.getPluginManager().callEvent(new RegisterEvent(player.getUniqueId(), args[0], args[1]));
+            if (args[0].equals(args[1])) {
+                Bukkit.getPluginManager().callEvent(new RegisterEvent(player, player.getUniqueId(), args[0]));
+            }
             return true;
         }
         return true;

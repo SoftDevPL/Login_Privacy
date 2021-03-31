@@ -1,6 +1,7 @@
 package lg.sec.loginprivacy.listeners.events;
 
 import lombok.Getter;
+import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
 
@@ -13,11 +14,14 @@ public class LoginEvent extends Event {
     @Getter
     private final UUID uuid;
     @Getter
+    private final Player player;
+    @Getter
     private final String password;
 
-    public LoginEvent(UUID uuid, String password) {
+    public LoginEvent(Player player, UUID uuid, String password) {
         this.password = password;
         this.uuid = uuid;
+        this.player = player;
     }
 
     @Override

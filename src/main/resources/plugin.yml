@@ -1,4 +1,4 @@
-name: LoginSecurity
+name: LoginPrivacy
 version: ${project.version}
 main: lg.sec.loginprivacy.LoginPrivacy
 authors: [ Devie ]

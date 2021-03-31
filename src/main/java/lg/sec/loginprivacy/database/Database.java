@@ -31,7 +31,7 @@ public class Database extends CustomSQLInterface {
                 temp = operation.operate(rs);
                 close(pstmt);
             } catch (SQLException e) {
-                System.out.println(e.getMessage());
+               //
             }
             return temp;
         }
@@ -42,7 +42,7 @@ public class Database extends CustomSQLInterface {
              PreparedStatement pstmt = conn.prepareStatement(query)) {
             pstmt.executeUpdate();
         } catch (SQLException e) {
-            System.out.println(e.getMessage());
+           //
         }
     }
 
@@ -53,7 +53,7 @@ public class Database extends CustomSQLInterface {
             pstmt.executeUpdate();
             close(pstmt);
         } catch (SQLException e) {
-            System.out.println(e.getMessage());
+          //
         }
     }
 
@@ -62,7 +62,7 @@ public class Database extends CustomSQLInterface {
              Statement stmt = conn.createStatement()) {
             stmt.execute(query);
         } catch (SQLException e) {
-            System.out.println(e.getMessage());
+            //
         }
     }
 
