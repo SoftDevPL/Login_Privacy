@@ -4,10 +4,14 @@ import lg.sec.loginprivacy.LoginPrivacy;
 import lg.sec.loginprivacy.database.Database;
 import lg.sec.loginprivacy.listeners.events.LoginEvent;
 import lg.sec.loginprivacy.listeners.events.RegisterEvent;
-import lg.sec.loginprivacy.listeners.hashingUtils.PasswordEncoder;
 import lg.sec.loginprivacy.listeners.hashingUtils.PasswordHarsher;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.event.entity.PlayerDeathEvent;
+import org.bukkit.event.player.PlayerCommandPreprocessEvent;
+import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 
 import java.util.ArrayList;
@@ -27,16 +31,26 @@ public class AuthListener implements Listener {
         this.loggedPlayers = this.database.getAllPlayersFromSession();
     }
 
+    private boolean login(UUID uuid, String rawPassword) {
+        String hashedPassword = this.database.getPlayerHashedPasswordByUUID(uuid);
+        if (hashedPassword == null) {
+            return false;
+        }
+        return new PasswordHarsher().matches(rawPassword, hashedPassword);
+    }
+
     @EventHandler
     private void onLogin(LoginEvent event) {
         event.getPlayer().sendMessage("Checking....");
         if (login(event.getUuid(), event.getPassword())) {
             if (!database.playerIsInSession(event.getPlayer().getUniqueId())) {
-                event.getPlayer().sendMessage("you logged in");
                 this.database.addPlayerToSession(event.getUuid());
+                event.getPlayer().sendMessage("you logged in");
             } else {
                 event.getPlayer().sendMessage("you already logged in");
             }
+            this.loggedPlayers.clear();
+            this.loggedPlayers = this.database.getAllPlayersFromSession();
         } else {
             event.getPlayer().sendMessage("Wrong Password");
         }
@@ -46,6 +60,8 @@ public class AuthListener implements Listener {
     private void onQuit(PlayerQuitEvent event) {
         if (database.playerIsInSession(event.getPlayer().getUniqueId())) {
             this.database.removePlayerFromSessionByUUID(event.getPlayer().getUniqueId());
+            this.loggedPlayers.clear();
+            this.loggedPlayers = this.database.getAllPlayersFromSession();
         }
     }
 
@@ -61,11 +77,24 @@ public class AuthListener implements Listener {
         }
     }
 
-    private boolean login(UUID uuid, String rawPassword) {
-        String hashedPassword = this.database.getPlayerHashedPasswordByUUID(uuid);
-        if (hashedPassword == null) {
-            return false;
+    @EventHandler
+    private void onMove(PlayerMoveEvent event) {
+        if (!loggedPlayers.contains(event.getPlayer().getUniqueId())) {
+          event.setCancelled(true);
         }
-        return new PasswordHarsher().matches(rawPassword, hashedPassword);
+    }
+
+    @EventHandler
+    private void onBlockBreak(BlockBreakEvent event) {
+        if (!loggedPlayers.contains(event.getPlayer().getUniqueId())) {
+            event.setCancelled(true);
+        }
+    }
+
+    @EventHandler
+    private void EntityDamageEvent(EntityDamageEvent event) {
+        if (!loggedPlayers.contains(event.getEntity().getUniqueId())) {
+            event.setCancelled(true);
+        }
     }
 }
