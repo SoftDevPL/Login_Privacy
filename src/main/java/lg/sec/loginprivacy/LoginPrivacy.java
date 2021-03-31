@@ -5,6 +5,7 @@ package lg.sec.loginprivacy;
 import lg.sec.loginprivacy.commands.CommandsManager;
 import lg.sec.loginprivacy.database.SQLManager;
 import lg.sec.loginprivacy.listeners.ListenersManager;
+import lg.sec.loginprivacy.resourcesConfigGenerator.ConfigsManager;
 import lombok.Getter;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -32,6 +33,9 @@ public final class LoginPrivacy extends JavaPlugin {
     @Getter
     private SQLManager sqlManager;
 
+    @Getter
+    private ConfigsManager configsManager;
+
     private String getMinecraftVersion(Server server) {
         String version = server.getVersion();
         int start = version.indexOf("MC: ") + 4;
@@ -52,7 +56,9 @@ public final class LoginPrivacy extends JavaPlugin {
     public void onEnable() {
         instance = this;
         listenersManager = new ListenersManager();
+        configsManager= new ConfigsManager();
         sqlManager = new SQLManager();
+        configsManager.init();
         sqlManager.init();
         new CommandsManager().init();
         listenersManager.init();
