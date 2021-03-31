@@ -9,7 +9,14 @@
 #                88888888888 88
 # <==================[Login Privacy]==================>
 Configuration:
-  # There you can disable your server authentication by setting this to 'true'
+  # There you can disable your server authentication by setting this to 'true'.
   disable-auth: false
-  # There you can specify the login message delay in ticks
+  # There you can specify the login message delay in ticks.
   join-message-delay: 50
+  # There you can specify.
+  join-location:
+    # There you can specify where players will be teleported when they connect to the server:
+    # 'true' - teleport player to set location for example: 'spawn, hub'
+    #  and teleports to the last seen location => if not defined teleport to last location.
+    # 'false' - spawns player to the last seen location as normal.
+    after-login-teleport-to-last-location: true

@@ -12,3 +12,7 @@ commands:
     usage: /register [password] [password]
     description: Register to your server account
     permission: lg.sec.loginprivacy.register
+  setLoginLocation:
+    usage: /setLoginLocation
+    description: Set specific location to login then teleport to last location
+    permission: lg.sec.loginprivacy.setLoginLocation

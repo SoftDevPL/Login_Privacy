@@ -4,9 +4,11 @@ import lg.sec.loginprivacy.LoginPrivacy;
 import lg.sec.loginprivacy.database.Database;
 import lg.sec.loginprivacy.listeners.events.LoginEvent;
 import lg.sec.loginprivacy.listeners.events.RegisterEvent;
+import lg.sec.loginprivacy.listeners.events.SetLoginLocationEvent;
 import lg.sec.loginprivacy.listeners.hashingUtils.PasswordHarsher;
 import lg.sec.loginprivacy.resourcesConfigGenerator.AuthConfigurationConfig;
 import org.bukkit.Bukkit;
+import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -19,9 +21,10 @@ import java.util.*;
 public class AuthListener implements Listener {
 
     private final Map<UUID, Integer> scheduledTimers = new HashMap<>();
+    public AuthConfigurationConfig authConfigurationConfig;
+    private int mainSchedulerId;
     private boolean authDisabled;
     private int joinMessageDelay;
-    public AuthConfigurationConfig authConfigurationConfig;
     private LoginPrivacy loginPrivacy;
     private List<UUID> loggedPlayers = new ArrayList<>();
     private Database database;
@@ -35,6 +38,7 @@ public class AuthListener implements Listener {
         this.loginPrivacy.getServer().getPluginManager().registerEvents(this, this.loginPrivacy);
         this.loggedPlayers = this.database.getAllPlayersFromSession();
         addSchedulersToAllOnlinePlayersOnReload();
+        updatePlayerLocationInScheduler();
     }
 
     private void addSchedulersToAllOnlinePlayersOnReload() {
@@ -44,6 +48,36 @@ public class AuthListener implements Listener {
                     specifyLoginMessage(player);
                 }
             }
+        }
+    }
+
+    private void updatePlayerLocationInScheduler() {
+        this.mainSchedulerId = LoginPrivacy.getInstance().getServer().getScheduler().scheduleSyncRepeatingTask(this.loginPrivacy, () -> {
+            for (Player player : Bukkit.getOnlinePlayers()) {
+//                updateLastSeenLocation(player);
+            }
+        }, 0, 18000);
+    }
+
+    private void updateLastSeenLocation(Player player) {
+        if (!database.playerHasLastSeenLocation(player.getUniqueId())) {
+            database.setLastSeenLocation(
+                    player.getUniqueId(),
+                    player.getLocation().getWorld().getUID(),
+                    player.getLocation().getX(),
+                    player.getLocation().getY(),
+                    player.getLocation().getZ(),
+                    player.getLocation().getPitch(),
+                    player.getLocation().getYaw());
+        } else {
+            this.database.updateLastSeenLocation(
+                    player.getUniqueId(),
+                    player.getLocation().getWorld().getUID(),
+                    player.getLocation().getX(),
+                    player.getLocation().getY(),
+                    player.getLocation().getZ(),
+                    player.getLocation().getPitch(),
+                    player.getLocation().getYaw());
         }
     }
 
@@ -79,7 +113,37 @@ public class AuthListener implements Listener {
     }
 
     @EventHandler
+    private void onSetLoginLocation(SetLoginLocationEvent event) {
+        if (!this.database.loginLocationExists(event.getNewLocation().getWorld().getUID())) {
+            this.database.setLoginLocationOnJoin(
+                    event.getNewLocation().getWorld().getUID(),
+                    event.getNewLocation().getX(),
+                    event.getNewLocation().getY(),
+                    event.getNewLocation().getZ(),
+                    event.getNewLocation().getPitch(),
+                    event.getNewLocation().getYaw()
+            );
+        } else {
+            this.database.updateLoginLocation(
+                    event.getNewLocation().getWorld().getUID(),
+                    event.getNewLocation().getX(),
+                    event.getNewLocation().getY(),
+                    event.getNewLocation().getZ(),
+                    event.getNewLocation().getPitch(),
+                    event.getNewLocation().getYaw()
+            );
+        }
+    }
+
+    @EventHandler
     private void onJoin(PlayerJoinEvent event) {
+        if (this.authConfigurationConfig.isAfterLoginTeleportToLastLocation()) {
+            Location location = this.database.getLoginLocation(event.getPlayer().getLocation().getWorld().getUID());
+            if (location != null) {
+                event.getPlayer().teleport(location);
+            }
+        }
+
         cleanOldSession(event.getPlayer());
     }
 
@@ -91,6 +155,8 @@ public class AuthListener implements Listener {
                     this.database.addPlayerToSession(event.getPlayer().getUniqueId());
                     LoginPrivacy.getInstance().getServer().getScheduler().cancelTask(scheduledTimers.get(event.getPlayer().getUniqueId()));
                     scheduledTimers.remove(event.getPlayer().getUniqueId());
+                    event.getPlayer().teleport(this.database.getLastSeenLocation(event.getPlayer().getUniqueId()));
+                    updateLastSeenLocation(event.getPlayer());
                     event.getPlayer().sendMessage(LoginPrivacy.convertColors("&aYou successfully logged in"));
                 } else {
                     event.getPlayer().sendMessage(LoginPrivacy.convertColors("&cYou already logged in!"));
@@ -105,13 +171,25 @@ public class AuthListener implements Listener {
         }
     }
 
+    private void updateLastSeenLocationOnQuit(Player player) {
+        this.database.updateLastSeenLocation(
+                player.getUniqueId(),
+                player.getLocation().getWorld().getUID(),
+                player.getLocation().getX(),
+                player.getLocation().getY(),
+                player.getLocation().getZ(),
+                player.getLocation().getPitch(),
+                player.getLocation().getYaw());
+    }
+
     @EventHandler
     private void onQuit(PlayerQuitEvent event) {
-            if (database.playerIsInSession(event.getPlayer().getUniqueId())) {
-                this.database.removePlayerFromSessionByUUID(event.getPlayer().getUniqueId());
-                this.loggedPlayers.clear();
-                this.loggedPlayers = this.database.getAllPlayersFromSession();
-            }
+        updateLastSeenLocationOnQuit(event.getPlayer());
+        if (database.playerIsInSession(event.getPlayer().getUniqueId())) {
+            this.database.removePlayerFromSessionByUUID(event.getPlayer().getUniqueId());
+            this.loggedPlayers.clear();
+            this.loggedPlayers = this.database.getAllPlayersFromSession();
+        }
     }
 
     @EventHandler
@@ -121,7 +199,7 @@ public class AuthListener implements Listener {
             if (!database.playerIsRegistered(event.getPlayer().getUniqueId())) {
                 this.database.registerPlayerInDatabase(event.getPlayer().getUniqueId(), hashedPassword);
                 this.database.addPlayerToSession(event.getPlayer().getUniqueId());
-                LoginPrivacy.getInstance().getServer().getScheduler().cancelTask(scheduledTimers.get(event.getPlayer().getUniqueId()));
+                this.loginPrivacy.getServer().getScheduler().cancelTask(scheduledTimers.get(event.getPlayer().getUniqueId()));
                 scheduledTimers.remove(event.getPlayer().getUniqueId());
                 this.loggedPlayers.clear();
                 this.loggedPlayers = this.database.getAllPlayersFromSession();

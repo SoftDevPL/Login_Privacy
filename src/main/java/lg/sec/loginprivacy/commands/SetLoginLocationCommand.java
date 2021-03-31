@@ -1,7 +1,7 @@
 package lg.sec.loginprivacy.commands;
 
 import lg.sec.loginprivacy.LoginPrivacy;
-import lg.sec.loginprivacy.listeners.events.LoginEvent;
+import lg.sec.loginprivacy.listeners.events.SetLoginLocationEvent;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.command.Command;
@@ -9,13 +9,12 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
-public class LoginCommand implements CommandExecutor {
+public class SetLoginLocationCommand implements CommandExecutor {
 
     private final LoginPrivacy loginPrivacy;
 
-    public LoginCommand(LoginPrivacy plugin) {
-        this.loginPrivacy = plugin;
-
+    public SetLoginLocationCommand(LoginPrivacy loginPrivacy) {
+        this.loginPrivacy = loginPrivacy;
     }
 
     @Override
@@ -24,14 +23,9 @@ public class LoginCommand implements CommandExecutor {
             sender.sendMessage(LoginPrivacy.convertColors("&cOnly player can execute this command"));
             return true;
         }
-        if (args.length == 0) {
-            sender.sendMessage(CommandsManager.getDescription(label, command));
-        }
-        if (args.length > 0) {
-            Player player = (Player) sender;
-            Bukkit.getPluginManager().callEvent(new LoginEvent(player, args[0], command));
-            return true;
-        }
+        Location location = LoginPrivacy.getInstance().getSqlManager().getDatabase().getLoginLocation(((Player) sender).getLocation().getWorld().getUID());
+        Bukkit.getPluginManager().callEvent(new SetLoginLocationEvent(((Player) sender).getPlayer(), location, ((Player) sender).getLocation()));
+        sender.sendMessage(LoginPrivacy.convertColors("&aLogin location set"));
         return true;
     }
 }
