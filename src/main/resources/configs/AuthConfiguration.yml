@@ -12,7 +12,7 @@ Configuration:
   # There you can disable your server authentication by setting this to 'true'.
   disable-auth: false
   # There you can specify the login message delay in ticks.
-  join-message-delay: 50
+  join-message-delay: 100
   # There you can specify.
   join-location:
     # There you can specify where players will be teleported when they connect to the server:
