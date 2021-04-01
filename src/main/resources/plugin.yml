@@ -2,6 +2,7 @@ name: LoginPrivacy
 version: ${project.version}
 main: lg.sec.loginprivacy.LoginPrivacy
 authors: [ Devie ]
+softdepend: [  Multiverse-Core ]
 description: Simple authentication plugin!
 commands:
   login:
