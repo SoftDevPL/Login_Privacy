@@ -202,6 +202,39 @@ public class Database extends CustomSQLInterface {
         }, sql);
     }
 
+    public List<UUID> getAllLastSeenLocationsUUIDs() {
+        String sql = "SELECT " + this.worldUUID + " FROM " + lastSeenLocationTable;
+        return new Worker<List<UUID>>().getSomething(rs -> {
+            List<UUID> uuidList = new ArrayList<>();
+            while(rs.next()) {
+                uuidList.add(UUID.fromString(rs.getString(this.worldUUID)));
+            }
+            return uuidList;
+        }, sql);
+    }
+
+    public List<UUID> getAllLoginLocationsUUIDs() {
+        String sql = "SELECT " + this.worldUUID + " FROM " + loginLocationTable;
+        return new Worker<List<UUID>>().getSomething(rs -> {
+            List<UUID> uuidList = new ArrayList<>();
+            while(rs.next()) {
+                uuidList.add(UUID.fromString(rs.getString(this.worldUUID)));
+            }
+            return uuidList;
+        }, sql);
+    }
+
+    public void deleteAllLoginNullWorlds(UUID worldUUID) {
+        String sql = "DELETE FROM " + loginLocationTable + " WHERE " + this.worldUUID + " = " +  "\"" + worldUUID.toString() + "\"";
+        delete(sql);
+    }
+
+    public void deleteAllLastSeenLocation(UUID worldUUID) {
+        String sql2 = "DELETE FROM " + lastSeenLocationTable + " WHERE " + this.worldUUID  + " = " + "\"" + worldUUID.toString() + "\"";
+        delete(sql2);
+    }
+
+
     public boolean playerHasLastSeenLocation(UUID playerUUID) {
         String sql = "SELECT * FROM " + lastSeenLocationTable + " WHERE " + this.playerUUID + " = " + "\"" + playerUUID.toString() + "\"";
         return new Worker<Boolean>().getSomething(ResultSet::next, sql);

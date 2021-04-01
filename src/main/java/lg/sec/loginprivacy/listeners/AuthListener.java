@@ -9,6 +9,7 @@ import lg.sec.loginprivacy.listeners.hashingUtils.PasswordHarsher;
 import lg.sec.loginprivacy.resourcesConfigGenerator.AuthConfigurationConfig;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -16,7 +17,9 @@ import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.player.*;
 
+import java.sql.SQLOutput;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class AuthListener implements Listener {
 
@@ -37,6 +40,7 @@ public class AuthListener implements Listener {
         this.database = this.loginPrivacy.getSqlManager().getDatabase();
         this.loginPrivacy.getServer().getPluginManager().registerEvents(this, this.loginPrivacy);
         this.loggedPlayers = this.database.getAllPlayersFromSession();
+        deleteAllNotExistingWorlds();
         addSchedulersToAllOnlinePlayersOnReload();
         updatePlayerLocationInScheduler();
     }
@@ -51,10 +55,30 @@ public class AuthListener implements Listener {
         }
     }
 
+    private void deleteAllNotExistingWorlds() {
+        List<UUID> worldListUUID = Bukkit.getWorlds().stream().map(World::getUID).collect(Collectors.toList());
+        List<UUID> lastSeenLocationsWorldsUUIDs = this.database.getAllLastSeenLocationsUUIDs();
+        List<UUID> loginLocationWorldsUUIDs = this.database.getAllLoginLocationsUUIDs();
+
+        for (UUID worldUUID: lastSeenLocationsWorldsUUIDs) {
+            if (!worldListUUID.contains(worldUUID)) {
+                System.out.println("Last seen loc: " + worldListUUID);
+               this.database.deleteAllLastSeenLocation(worldUUID);
+            }
+        }
+
+        for (UUID worldUUID: loginLocationWorldsUUIDs) {
+            if (!worldListUUID.contains(worldUUID)) {
+                System.out.println("Login loc: " + worldListUUID);
+                this.database.deleteAllLoginNullWorlds(worldUUID);
+            }
+        }
+    }
+
     private void updatePlayerLocationInScheduler() {
         this.mainSchedulerId = LoginPrivacy.getInstance().getServer().getScheduler().scheduleSyncRepeatingTask(this.loginPrivacy, () -> {
             for (Player player : Bukkit.getOnlinePlayers()) {
-//                updateLastSeenLocation(player);
+                updateLastSeenLocation(player);
             }
         }, 0, 18000);
     }
@@ -139,11 +163,10 @@ public class AuthListener implements Listener {
     private void onJoin(PlayerJoinEvent event) {
         if (this.authConfigurationConfig.isAfterLoginTeleportToLastLocation()) {
             Location location = this.database.getLoginLocation(event.getPlayer().getLocation().getWorld().getUID());
-            if (location != null) {
+            if (location != null && location.getWorld() != null) {
                 event.getPlayer().teleport(location);
             }
         }
-
         cleanOldSession(event.getPlayer());
     }
 
@@ -155,7 +178,12 @@ public class AuthListener implements Listener {
                     this.database.addPlayerToSession(event.getPlayer().getUniqueId());
                     LoginPrivacy.getInstance().getServer().getScheduler().cancelTask(scheduledTimers.get(event.getPlayer().getUniqueId()));
                     scheduledTimers.remove(event.getPlayer().getUniqueId());
-                    event.getPlayer().teleport(this.database.getLastSeenLocation(event.getPlayer().getUniqueId()));
+                    if (this.authConfigurationConfig.isAfterLoginTeleportToLastLocation()) {
+                        Location location = this.database.getLastSeenLocation(event.getPlayer().getUniqueId());
+                        if (location != null && location.getWorld() != null) {
+                            event.getPlayer().teleport(location);
+                        }
+                    }
                     updateLastSeenLocation(event.getPlayer());
                     event.getPlayer().sendMessage(LoginPrivacy.convertColors("&aYou successfully logged in"));
                 } else {
