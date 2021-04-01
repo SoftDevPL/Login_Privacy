@@ -17,7 +17,6 @@ import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.player.*;
 
-import java.sql.SQLOutput;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -55,23 +54,23 @@ public class AuthListener implements Listener {
         }
     }
 
+    private List<UUID> returnRetailedList(List<UUID> mainList, List<UUID> listToRetail) {
+        return listToRetail.stream().filter(item -> !mainList.contains(item)).collect(Collectors.toList());
+    }
+
+
+
+
     private void deleteAllNotExistingWorlds() {
-        List<UUID> worldListUUID = Bukkit.getWorlds().stream().map(World::getUID).collect(Collectors.toList());
         List<UUID> lastSeenLocationsWorldsUUIDs = this.database.getAllLastSeenLocationsUUIDs();
         List<UUID> loginLocationWorldsUUIDs = this.database.getAllLoginLocationsUUIDs();
 
-        for (UUID worldUUID: lastSeenLocationsWorldsUUIDs) {
-            if (!worldListUUID.contains(worldUUID)) {
-                System.out.println("Last seen loc: " + worldListUUID);
-               this.database.deleteAllLastSeenLocation(worldUUID);
-            }
+        for (UUID uuid: returnRetailedList(Bukkit.getWorlds().stream().map(World::getUID).collect(Collectors.toList()), lastSeenLocationsWorldsUUIDs)) {
+            this.database.deleteAllLastSeenLocation(uuid);
         }
 
-        for (UUID worldUUID: loginLocationWorldsUUIDs) {
-            if (!worldListUUID.contains(worldUUID)) {
-                System.out.println("Login loc: " + worldListUUID);
-                this.database.deleteAllLoginNullWorlds(worldUUID);
-            }
+        for (UUID uuid: returnRetailedList(Bukkit.getWorlds().stream().map(World::getUID).collect(Collectors.toList()), loginLocationWorldsUUIDs)) {
+            this.database.deleteAllLoginNullWorlds(uuid);
         }
     }
 
@@ -128,6 +127,7 @@ public class AuthListener implements Listener {
 
     private void cleanOldSession(Player player) {
         if (this.database.playerIsInSession(player.getUniqueId())) {
+            this.database.removePlayerFromSessionByUUID(player.getUniqueId());
             scheduledTimers.remove(player.getUniqueId());
             loggedPlayers.remove(player.getUniqueId());
         }

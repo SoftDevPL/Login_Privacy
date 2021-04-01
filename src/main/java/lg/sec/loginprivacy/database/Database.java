@@ -234,6 +234,10 @@ public class Database extends CustomSQLInterface {
         delete(sql2);
     }
 
+    public boolean worldHasLoginLocation(UUID worldUUID) {
+        String sql = "SELECT * FROM " + loginLocationTable + " WHERE " + this.worldUUID + " = " + "\"" + worldUUID.toString() + "\"";
+        return new Worker<Boolean>().getSomething(ResultSet::next, sql);
+    }
 
     public boolean playerHasLastSeenLocation(UUID playerUUID) {
         String sql = "SELECT * FROM " + lastSeenLocationTable + " WHERE " + this.playerUUID + " = " + "\"" + playerUUID.toString() + "\"";
