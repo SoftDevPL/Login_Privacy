@@ -64,12 +64,10 @@ public class AuthListener implements Listener {
         List<UUID> loginLocationWorldsUUIDs = this.database.getAllLoginLocationsUUIDs();
 
         for (UUID uuid: returnRetailedList(Bukkit.getWorlds().stream().map(World::getUID).collect(Collectors.toList()), lastSeenLocationsWorldsUUIDs)) {
-            System.out.println(uuid);
             this.database.deleteAllLastSeenLocation(uuid);
         }
 
         for (UUID uuid: returnRetailedList(Bukkit.getWorlds().stream().map(World::getUID).collect(Collectors.toList()), loginLocationWorldsUUIDs)) {
-            System.out.println(uuid);
             this.database.deleteAllLoginNullWorlds(uuid);
         }
     }
