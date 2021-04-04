@@ -15,7 +15,10 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.event.entity.EntityPickupItemEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
+import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.player.*;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.util.Vector;
@@ -323,4 +326,42 @@ public class AuthListener implements Listener {
             }
         }
     }
+
+    @EventHandler()
+    private void arrowPickUpEvent(PlayerPickupArrowEvent event) {
+        if (!this.authDisabled) {
+            if (!loggedPlayers.contains(event.getPlayer().getUniqueId())) {
+                event.setCancelled(true);
+            }
+        }
+    }
+
+    @EventHandler
+    private void blockPickUpEvent(EntityPickupItemEvent event) {
+        if (!this.authDisabled) {
+            if (!loggedPlayers.contains(event.getEntity().getUniqueId())) {
+                event.setCancelled(true);
+            }
+        }
+    }
+
+    @EventHandler(ignoreCancelled = true)
+    private void damageEvent(EntityDamageByEntityEvent event) {
+        if (!this.authDisabled) {
+            if (event.getDamager() instanceof Player && !loggedPlayers.contains(event.getDamager().getUniqueId())) {
+                event.setCancelled(true);
+            }
+        }
+    }
+
+    @EventHandler
+    private void inventoryClickEvent(InventoryClickEvent event) {
+        if (!this.authDisabled) {
+            if (!loggedPlayers.contains(event.getWhoClicked().getUniqueId())) {
+                event.setCancelled(true);
+            }
+        }
+    }
+
+
 }
