@@ -21,7 +21,6 @@ import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.player.*;
 import org.bukkit.potion.PotionEffect;
-import org.bukkit.util.Vector;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -35,6 +34,7 @@ public class AuthListener implements Listener {
     private int joinMessageDelay;
     private LoginPrivacy loginPrivacy;
     private List<UUID> loggedPlayers = new ArrayList<>();
+    private Map<UUID, Integer> schedulersIds  = new HashMap<>();
     private Database database;
 
     public void init() {
@@ -216,12 +216,7 @@ public class AuthListener implements Listener {
                     Location location = this.database.getLastSeenLocation(player.getUniqueId());
                     if (location != null && location.getWorld() != null) {
                         player.teleport(location);
-                        player.sendMessage(LoginPrivacy.convertColors("&cYou are Invulnerable for &f5 sec"));
-                        Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(this.loginPrivacy, () -> {
-                            player.sendMessage(LoginPrivacy.convertColors("&cYou are no more Invulnerable"));
-                            player.setInvulnerable(false);
-                            removeAllNegativePotionEffects(player);
-                        }, 100);
+                        preparePlayerAfterAuthentication(player);
                     }
                 }
                 updateLastSeenLocation(player);
@@ -244,6 +239,8 @@ public class AuthListener implements Listener {
             this.database.removePlayerFromSessionByUUID(event.getPlayer().getUniqueId());
             this.loggedPlayers.clear();
             this.loggedPlayers = this.database.getAllPlayersFromSession();
+            Bukkit.getServer().getScheduler().cancelTask(schedulersIds.get(event.getPlayer().getUniqueId()));
+            schedulersIds.remove(event.getPlayer().getUniqueId());
         }
     }
 
@@ -258,6 +255,7 @@ public class AuthListener implements Listener {
                 scheduledTimers.remove(event.getPlayer().getUniqueId());
                 this.loggedPlayers.clear();
                 this.loggedPlayers = this.database.getAllPlayersFromSession();
+                preparePlayerAfterAuthentication(event.getPlayer());
                 event.getPlayer().sendMessage(LoginPrivacy.convertColors("&aYou successfully registered"));
             } else {
                 event.getPlayer().sendMessage(LoginPrivacy.convertColors("&eYou are already registered"));
@@ -265,6 +263,16 @@ public class AuthListener implements Listener {
         } else {
             event.getPlayer().sendMessage(LoginPrivacy.convertColors("&cAuth is Disabled"));
         }
+    }
+
+    private void preparePlayerAfterAuthentication(Player player) {
+        player.sendMessage(LoginPrivacy.convertColors("&cYou are Invulnerable for &f5 sec"));
+        int schedulerId = Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(this.loginPrivacy, () -> {
+            player.sendMessage(LoginPrivacy.convertColors("&cYou are no more Invulnerable"));
+            player.setInvulnerable(false);
+            removeAllNegativePotionEffects(player);
+        }, 100);
+        schedulersIds.put(player.getUniqueId(), schedulerId);
     }
 
     @EventHandler(ignoreCancelled = true)
@@ -359,6 +367,17 @@ public class AuthListener implements Listener {
         if (!this.authDisabled) {
             if (!loggedPlayers.contains(event.getWhoClicked().getUniqueId())) {
                 event.setCancelled(true);
+            }
+        }
+    }
+
+    @EventHandler
+    private void commandEvent(PlayerCommandPreprocessEvent event) {
+        if (!this.authDisabled) {
+            if (!loggedPlayers.contains(event.getPlayer().getUniqueId())) {
+                if (!(event.getMessage().contains("/login") || event.getMessage().contains("/register"))) {
+                    event.setCancelled(true);
+                }
             }
         }
     }
