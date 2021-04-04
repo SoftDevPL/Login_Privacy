@@ -12,10 +12,13 @@ import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
-import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.*;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.util.Vector;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -63,11 +66,11 @@ public class AuthListener implements Listener {
         List<UUID> lastSeenLocationsWorldsUUIDs = this.database.getAllLastSeenLocationsUUIDs();
         List<UUID> loginLocationWorldsUUIDs = this.database.getAllLoginLocationsUUIDs();
 
-        for (UUID uuid: returnRetailedList(Bukkit.getWorlds().stream().map(World::getUID).collect(Collectors.toList()), lastSeenLocationsWorldsUUIDs)) {
+        for (UUID uuid : returnRetailedList(Bukkit.getWorlds().stream().map(World::getUID).collect(Collectors.toList()), lastSeenLocationsWorldsUUIDs)) {
             this.database.deleteAllLastSeenLocation(uuid);
         }
 
-        for (UUID uuid: returnRetailedList(Bukkit.getWorlds().stream().map(World::getUID).collect(Collectors.toList()), loginLocationWorldsUUIDs)) {
+        for (UUID uuid : returnRetailedList(Bukkit.getWorlds().stream().map(World::getUID).collect(Collectors.toList()), loginLocationWorldsUUIDs)) {
             this.database.deleteAllLoginNullWorlds(uuid);
         }
     }
@@ -134,6 +137,13 @@ public class AuthListener implements Listener {
         }
     }
 
+    private void removeAllNegativePotionEffects(Player player) {
+        for (PotionEffect effect : player.getActivePotionEffects()) {
+            player.removePotionEffect(effect.getType());
+        }
+        player.setFireTicks(0);
+    }
+
     @EventHandler
     private void onSetLoginLocation(SetLoginLocationEvent event) {
         if (!this.database.loginLocationExists(event.getNewLocation().getWorld().getUID())) {
@@ -157,41 +167,26 @@ public class AuthListener implements Listener {
         }
     }
 
-    @EventHandler
-    private void onJoin(PlayerJoinEvent event) {
+    private void teleportPlayerToLoginLocation(Player player) {
         if (this.authConfigurationConfig.isAfterLoginTeleportToLastLocation()) {
-            Location location = this.database.getLoginLocation(event.getPlayer().getLocation().getWorld().getUID());
+            Location location = this.database.getLoginLocation(player.getLocation().getWorld().getUID());
             if (location != null && location.getWorld() != null) {
-                event.getPlayer().teleport(location);
+                player.setInvulnerable(true);
+                player.teleport(location);
             }
         }
+    }
+
+    @EventHandler
+    private void onJoin(PlayerJoinEvent event) {
+        teleportPlayerToLoginLocation(event.getPlayer());
         cleanOldSession(event.getPlayer());
     }
 
     @EventHandler
     private void onLogin(LoginEvent event) {
         if (!this.authDisabled) {
-            if (login(event.getPlayer().getUniqueId(), event.getPassword())) {
-                if (!database.playerIsInSession(event.getPlayer().getUniqueId())) {
-                    this.database.addPlayerToSession(event.getPlayer().getUniqueId());
-                    LoginPrivacy.getInstance().getServer().getScheduler().cancelTask(scheduledTimers.get(event.getPlayer().getUniqueId()));
-                    scheduledTimers.remove(event.getPlayer().getUniqueId());
-                    if (this.authConfigurationConfig.isAfterLoginTeleportToLastLocation()) {
-                        Location location = this.database.getLastSeenLocation(event.getPlayer().getUniqueId());
-                        if (location != null && location.getWorld() != null) {
-                            event.getPlayer().teleport(location);
-                        }
-                    }
-                    updateLastSeenLocation(event.getPlayer());
-                    event.getPlayer().sendMessage(LoginPrivacy.convertColors("&aYou successfully logged in"));
-                } else {
-                    event.getPlayer().sendMessage(LoginPrivacy.convertColors("&cYou already logged in!"));
-                }
-                this.loggedPlayers.clear();
-                this.loggedPlayers = this.database.getAllPlayersFromSession();
-            } else {
-                event.getPlayer().sendMessage(LoginPrivacy.convertColors("&4Wrong Password"));
-            }
+            authenticatePlayer(event.getPlayer(), event.getPassword());
         } else {
             event.getPlayer().sendMessage(LoginPrivacy.convertColors("&cAuth is Disabled"));
         }
@@ -206,6 +201,37 @@ public class AuthListener implements Listener {
                 player.getLocation().getZ(),
                 player.getLocation().getPitch(),
                 player.getLocation().getYaw());
+    }
+
+    private void authenticatePlayer(Player player, String password) {
+        if (!database.playerIsInSession(player.getUniqueId())) {
+            if (login(player.getUniqueId(), password)) {
+                this.database.addPlayerToSession(player.getUniqueId());
+                LoginPrivacy.getInstance().getServer().getScheduler().cancelTask(scheduledTimers.get(player.getUniqueId()));
+                scheduledTimers.remove(player.getUniqueId());
+                if (this.authConfigurationConfig.isAfterLoginTeleportToLastLocation()) {
+                    Location location = this.database.getLastSeenLocation(player.getUniqueId());
+                    if (location != null && location.getWorld() != null) {
+                        player.teleport(location);
+                        player.sendMessage(LoginPrivacy.convertColors("&cYou are Invulnerable for &f5 sec"));
+                        Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(this.loginPrivacy, () -> {
+                            player.sendMessage(LoginPrivacy.convertColors("&cYou are no more Invulnerable"));
+                            player.setInvulnerable(false);
+                            removeAllNegativePotionEffects(player);
+                        }, 100);
+                    }
+                }
+                updateLastSeenLocation(player);
+                player.sendMessage(LoginPrivacy.convertColors("&aYou successfully logged in"));
+            } else {
+                player.sendMessage(LoginPrivacy.convertColors("&4Wrong Password"));
+            }
+            this.loggedPlayers.clear();
+            this.loggedPlayers = this.database.getAllPlayersFromSession();
+        } else {
+            player.sendMessage(LoginPrivacy.convertColors("&cYou already logged in!"));
+
+        }
     }
 
     @EventHandler
@@ -274,11 +300,26 @@ public class AuthListener implements Listener {
         }
     }
 
-    @EventHandler(ignoreCancelled = true)
-    private void damageEvent(EntityDamageByEntityEvent event) {
+    @EventHandler(priority = EventPriority.HIGHEST)
+    private void respawnEvent(PlayerDeathEvent event) {
         if (!this.authDisabled) {
-            if (event.getDamager() instanceof Player && !loggedPlayers.contains(event.getDamager().getUniqueId())) {
-                event.setCancelled(true);
+            Player player = event.getEntity();
+            if (!loggedPlayers.contains(player.getUniqueId())) {
+                Bukkit.getServer().getScheduler().runTask(this.loginPrivacy, () -> {
+                    teleportPlayerToLoginLocation(player);
+                });
+            }
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST)
+    private void respawnEvent(PlayerRespawnEvent event) {
+        if (!this.authDisabled) {
+            Player player = event.getPlayer();
+            if (!loggedPlayers.contains(player.getUniqueId())) {
+                Bukkit.getServer().getScheduler().runTask(this.loginPrivacy, () -> {
+                    teleportPlayerToLoginLocation(player);
+                });
             }
         }
     }

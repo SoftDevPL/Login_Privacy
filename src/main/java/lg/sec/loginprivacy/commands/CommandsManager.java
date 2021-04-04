@@ -17,7 +17,7 @@ public class CommandsManager {
 
     public void init() {
         this.loginPrivacy = LoginPrivacy.getInstance();
-        this.loginPrivacy.getCommand("setLoginLocation").setExecutor(new SetLoginLocationCommand(this.loginPrivacy));
+        this.loginPrivacy.getCommand("setloginlocation").setExecutor(new SetLoginLocationCommand(this.loginPrivacy));
         this.loginPrivacy.getCommand("login").setExecutor(new LoginCommand(this.loginPrivacy));
         this.loginPrivacy.getCommand("register").setExecutor(new RegisterCommand(this.loginPrivacy));
     }
