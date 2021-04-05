@@ -174,7 +174,6 @@ public class AuthListener implements Listener {
         if (this.authConfigurationConfig.isAfterLoginTeleportToLastLocation()) {
             Location location = this.database.getLoginLocation(player.getLocation().getWorld().getUID());
             if (location != null && location.getWorld() != null) {
-                player.setInvulnerable(true);
                 player.teleport(location);
             }
         }
@@ -183,6 +182,7 @@ public class AuthListener implements Listener {
     @EventHandler
     private void onJoin(PlayerJoinEvent event) {
         teleportPlayerToLoginLocation(event.getPlayer());
+        event.getPlayer().setInvulnerable(true);
         cleanOldSession(event.getPlayer());
     }
 
@@ -239,7 +239,6 @@ public class AuthListener implements Listener {
             this.database.removePlayerFromSessionByUUID(event.getPlayer().getUniqueId());
             this.loggedPlayers.clear();
             this.loggedPlayers = this.database.getAllPlayersFromSession();
-            Bukkit.getServer().getScheduler().cancelTask(schedulersIds.get(event.getPlayer().getUniqueId()));
             schedulersIds.remove(event.getPlayer().getUniqueId());
         }
     }
@@ -267,19 +266,18 @@ public class AuthListener implements Listener {
 
     private void preparePlayerAfterAuthentication(Player player) {
         player.sendMessage(LoginPrivacy.convertColors("&cYou are Invulnerable for &f5 sec"));
-        int schedulerId = Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(this.loginPrivacy, () -> {
+        Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(this.loginPrivacy, () -> {
             player.sendMessage(LoginPrivacy.convertColors("&cYou are no more Invulnerable"));
             player.setInvulnerable(false);
             removeAllNegativePotionEffects(player);
         }, 100);
-        schedulersIds.put(player.getUniqueId(), schedulerId);
     }
 
     @EventHandler(ignoreCancelled = true)
     private void onMove(PlayerMoveEvent event) {
         if (!this.authDisabled) {
             if (!loggedPlayers.contains(event.getPlayer().getUniqueId())) {
-                event.setCancelled(true);
+                    event.setCancelled(true);
             }
         }
     }
@@ -312,24 +310,26 @@ public class AuthListener implements Listener {
     }
 
     @EventHandler(priority = EventPriority.HIGHEST)
-    private void respawnEvent(PlayerDeathEvent event) {
+    private void deathEvent(PlayerDeathEvent event) {
         if (!this.authDisabled) {
             Player player = event.getEntity();
             if (!loggedPlayers.contains(player.getUniqueId())) {
                 Bukkit.getServer().getScheduler().runTask(this.loginPrivacy, () -> {
                     teleportPlayerToLoginLocation(player);
+                    player.setInvulnerable(true);
                 });
             }
         }
     }
 
     @EventHandler(priority = EventPriority.HIGHEST)
-    private void respawnEvent(PlayerRespawnEvent event) {
+    private void deathEvent(PlayerRespawnEvent event) {
         if (!this.authDisabled) {
             Player player = event.getPlayer();
             if (!loggedPlayers.contains(player.getUniqueId())) {
                 Bukkit.getServer().getScheduler().runTask(this.loginPrivacy, () -> {
                     teleportPlayerToLoginLocation(player);
+                    player.setInvulnerable(true);
                 });
             }
         }
@@ -354,10 +354,12 @@ public class AuthListener implements Listener {
     }
 
     @EventHandler(ignoreCancelled = true)
-    private void damageEvent(EntityDamageByEntityEvent event) {
+    private void damageEventByEntity(EntityDamageByEntityEvent event) {
         if (!this.authDisabled) {
-            if (event.getDamager() instanceof Player && !loggedPlayers.contains(event.getDamager().getUniqueId())) {
-                event.setCancelled(true);
+            if (event.getDamager() instanceof Player) {
+                if (!loggedPlayers.contains(event.getEntity().getUniqueId())) {
+                    event.setCancelled(true);
+                }
             }
         }
     }
