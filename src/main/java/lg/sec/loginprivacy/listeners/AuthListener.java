@@ -316,7 +316,6 @@ public class AuthListener implements Listener {
             if (!loggedPlayers.contains(player.getUniqueId())) {
                 Bukkit.getServer().getScheduler().runTask(this.loginPrivacy, () -> {
                     teleportPlayerToLoginLocation(player);
-                    player.setInvulnerable(true);
                 });
             }
         }
@@ -329,7 +328,6 @@ public class AuthListener implements Listener {
             if (!loggedPlayers.contains(player.getUniqueId())) {
                 Bukkit.getServer().getScheduler().runTask(this.loginPrivacy, () -> {
                     teleportPlayerToLoginLocation(player);
-                    player.setInvulnerable(true);
                 });
             }
         }
@@ -356,10 +354,8 @@ public class AuthListener implements Listener {
     @EventHandler(ignoreCancelled = true)
     private void damageEventByEntity(EntityDamageByEntityEvent event) {
         if (!this.authDisabled) {
-            if (event.getDamager() instanceof Player) {
-                if (!loggedPlayers.contains(event.getEntity().getUniqueId())) {
-                    event.setCancelled(true);
-                }
+            if (event.getDamager() instanceof Player && !loggedPlayers.contains(event.getEntity().getUniqueId()) && event.getEntity() instanceof Player) {
+                event.setCancelled(true);
             }
         }
     }
