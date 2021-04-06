@@ -4,7 +4,6 @@ package lg.sec.loginprivacy.database;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
-import sun.awt.windows.WWindowPeer;
 
 import java.sql.*;
 import java.util.ArrayList;
@@ -28,35 +27,12 @@ public class Database extends CustomSQLInterface {
     private final String playerUUID = "playerUUID";
     private final String password = "password";
 
-    private interface DatabaseOperation<T> {
-        T operate(ResultSet rs) throws SQLException;
-    }
-
-    private interface DatabaseInsertion {
-        void insert(PreparedStatement pstmt) throws SQLException;
-    }
-
-    private class Worker<T> {
-        public T getSomething(DatabaseOperation<T> operation, String query) {
-            T temp = null;
-            try (Connection conn = Database.this.connect();
-                 PreparedStatement pstmt = conn.prepareStatement(query)) {
-                ResultSet rs = pstmt.executeQuery();
-                temp = operation.operate(rs);
-                close(pstmt);
-            } catch (SQLException e) {
-               //
-            }
-            return temp;
-        }
-    }
-
     private void delete(String query) {
         try (Connection conn = Database.this.connect();
              PreparedStatement pstmt = conn.prepareStatement(query)) {
             pstmt.executeUpdate();
         } catch (SQLException e) {
-           //
+            //
         }
     }
 
@@ -67,7 +43,7 @@ public class Database extends CustomSQLInterface {
             pstmt.executeUpdate();
             close(pstmt);
         } catch (SQLException e) {
-          //
+            //
         }
     }
 
@@ -85,7 +61,7 @@ public class Database extends CustomSQLInterface {
         CheckIfDatabaseExists();
         createPasswordTable(passwordTable, playerUUID, password);
         createSessionTable(sessionTable, playerUUID);
-        createLastSeenLocationTable(lastSeenLocationTable,playerUUID, worldUUID, x, y, z, pitch, yaw);
+        createLastSeenLocationTable(lastSeenLocationTable, playerUUID, worldUUID, x, y, z, pitch, yaw);
         createLoginLocationTable(loginLocationTable, worldUUID, x, y, z, pitch, yaw);
     }
 
@@ -99,19 +75,19 @@ public class Database extends CustomSQLInterface {
         createTable(sql, this.databaseUrl);
     }
 
-    private void createLastSeenLocationTable(String lastSeenLocationTable, String playerUUID , String worldUUID, String x, String y, String z, String pitch, String yaw) {
+    private void createLastSeenLocationTable(String lastSeenLocationTable, String playerUUID, String worldUUID, String x, String y, String z, String pitch, String yaw) {
         String sql = "CREATE TABLE IF NOT EXISTS " + lastSeenLocationTable + " (" + playerUUID + " wibblewibble NOT NULL, " + worldUUID + " wibblewibble NOT NULL, " + x + " REAL NOT NULL, " + y
                 + " REAL NOT NULL, " + z + " REAL NOT NULL, " + pitch + " REAL NOT NULL, " + yaw + " REAL NOT NULL );";
         createTable(sql, this.databaseUrl);
     }
 
-    private void createLoginLocationTable(String loginLocationTable, String worldUUID,  String x, String y, String z, String pitch,String yaw) {
+    private void createLoginLocationTable(String loginLocationTable, String worldUUID, String x, String y, String z, String pitch, String yaw) {
         String sql = "CREATE TABLE IF NOT EXISTS " + loginLocationTable + " (" + worldUUID + " wibblewibble NOT NULL, " + x + " REAL NOT NULL, " + y
                 + " REAL NOT NULL, " + z + " REAL NOT NULL, " + pitch + " REAL NOT NULL, " + yaw + " REAL NOT NULL );";
         createTable(sql, this.databaseUrl);
     }
 
-    public void setLastSeenLocation(UUID playerUUID ,UUID worldUUID, double x, double y, double z, float pitch, float yaw) {
+    public void setLastSeenLocation(UUID playerUUID, UUID worldUUID, double x, double y, double z, float pitch, float yaw) {
         String sql = "INSERT INTO " + lastSeenLocationTable + " (" + this.playerUUID + ", " + this.worldUUID + ", " + this.x + ", " + this.y + ", " + this.z + ", " + this.yaw + ", " + this.pitch + ") VALUES(?,?,?,?,?,?,?)";
         insertSomething(pstmt -> {
             pstmt.setString(1, playerUUID.toString());
@@ -124,8 +100,8 @@ public class Database extends CustomSQLInterface {
         }, sql);
     }
 
-    public void updateLastSeenLocation(UUID playerUUID ,UUID worldUUID, double x, double y, double z, float pitch, float yaw) {
-        String sql = "UPDATE " + this.lastSeenLocationTable + " SET " + this.worldUUID + "= ?, " + this.x  + "= ?, " + this.y  + "= ?, " + this.z  + "= ?, " + this.yaw + "= ?, " + this.pitch + "= ? WHERE " + this.playerUUID + " = ?";
+    public void updateLastSeenLocation(UUID playerUUID, UUID worldUUID, double x, double y, double z, float pitch, float yaw) {
+        String sql = "UPDATE " + this.lastSeenLocationTable + " SET " + this.worldUUID + "= ?, " + this.x + "= ?, " + this.y + "= ?, " + this.z + "= ?, " + this.yaw + "= ?, " + this.pitch + "= ? WHERE " + this.playerUUID + " = ?";
         insertSomething(pstmt -> {
             pstmt.setString(1, worldUUID.toString());
             pstmt.setDouble(2, x);
@@ -133,12 +109,12 @@ public class Database extends CustomSQLInterface {
             pstmt.setDouble(4, z);
             pstmt.setFloat(5, yaw);
             pstmt.setFloat(6, pitch);
-            pstmt.setString(7,playerUUID.toString());
+            pstmt.setString(7, playerUUID.toString());
         }, sql);
     }
 
     public void updateLoginLocation(UUID worldUUID, double x, double y, double z, float pitch, float yaw) {
-        String sql = "UPDATE " + this.loginLocationTable + " SET " + this.x  + "= ?, " + this.y  + "= ?, " + this.z  + "= ?, " + this.yaw  + "= ?, " + this.pitch + "= ? WHERE " + this.worldUUID + " = ?";
+        String sql = "UPDATE " + this.loginLocationTable + " SET " + this.x + "= ?, " + this.y + "= ?, " + this.z + "= ?, " + this.yaw + "= ?, " + this.pitch + "= ? WHERE " + this.worldUUID + " = ?";
         insertSomething(pstmt -> {
             pstmt.setDouble(1, x);
             pstmt.setDouble(2, y);
@@ -184,13 +160,13 @@ public class Database extends CustomSQLInterface {
         String sql = "SELECT * FROM " + lastSeenLocationTable + " WHERE " + this.playerUUID + " = " + "\"" + playerUUID.toString() + "\"";
         return new Worker<Location>().getSomething(rs -> {
             World world = Bukkit.getServer().getWorld(UUID.fromString(rs.getString(this.worldUUID)));
-             return new Location(
+            return new Location(
                     world,
                     rs.getDouble(x),
                     rs.getDouble(y),
                     rs.getDouble(z),
                     rs.getFloat(yaw),
-                     rs.getFloat(pitch));
+                    rs.getFloat(pitch));
         }, sql);
     }
 
@@ -206,7 +182,7 @@ public class Database extends CustomSQLInterface {
         String sql = "SELECT " + this.worldUUID + " FROM " + lastSeenLocationTable;
         return new Worker<List<UUID>>().getSomething(rs -> {
             List<UUID> uuidList = new ArrayList<>();
-            while(rs.next()) {
+            while (rs.next()) {
                 uuidList.add(UUID.fromString(rs.getString(this.worldUUID)));
             }
             return uuidList;
@@ -217,7 +193,7 @@ public class Database extends CustomSQLInterface {
         String sql = "SELECT " + this.worldUUID + " FROM " + loginLocationTable;
         return new Worker<List<UUID>>().getSomething(rs -> {
             List<UUID> uuidList = new ArrayList<>();
-            while(rs.next()) {
+            while (rs.next()) {
                 uuidList.add(UUID.fromString(rs.getString(this.worldUUID)));
             }
             return uuidList;
@@ -225,18 +201,13 @@ public class Database extends CustomSQLInterface {
     }
 
     public void deleteAllLoginNullWorlds(UUID worldUUID) {
-        String sql = "DELETE FROM " + loginLocationTable + " WHERE " + this.worldUUID + " = " +  "\"" + worldUUID.toString() + "\"";
+        String sql = "DELETE FROM " + loginLocationTable + " WHERE " + this.worldUUID + " = " + "\"" + worldUUID.toString() + "\"";
         delete(sql);
     }
 
     public void deleteAllLastSeenLocation(UUID worldUUID) {
-        String sql2 = "DELETE FROM " + lastSeenLocationTable + " WHERE " + this.worldUUID  + " = " + "\"" + worldUUID.toString() + "\"";
+        String sql2 = "DELETE FROM " + lastSeenLocationTable + " WHERE " + this.worldUUID + " = " + "\"" + worldUUID.toString() + "\"";
         delete(sql2);
-    }
-
-    public boolean worldHasLoginLocation(UUID worldUUID) {
-        String sql = "SELECT * FROM " + loginLocationTable + " WHERE " + this.worldUUID + " = " + "\"" + worldUUID.toString() + "\"";
-        return new Worker<Boolean>().getSomething(ResultSet::next, sql);
     }
 
     public boolean playerHasLastSeenLocation(UUID playerUUID) {
@@ -278,5 +249,28 @@ public class Database extends CustomSQLInterface {
             }
             return players;
         }, sql);
+    }
+
+    private interface DatabaseOperation<T> {
+        T operate(ResultSet rs) throws SQLException;
+    }
+
+    private interface DatabaseInsertion {
+        void insert(PreparedStatement pstmt) throws SQLException;
+    }
+
+    private class Worker<T> {
+        public T getSomething(DatabaseOperation<T> operation, String query) {
+            T temp = null;
+            try (Connection conn = Database.this.connect();
+                 PreparedStatement pstmt = conn.prepareStatement(query)) {
+                ResultSet rs = pstmt.executeQuery();
+                temp = operation.operate(rs);
+                close(pstmt);
+            } catch (SQLException e) {
+                //
+            }
+            return temp;
+        }
     }
 }

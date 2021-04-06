@@ -34,7 +34,7 @@ public class AuthListener implements Listener {
     private int joinMessageDelay;
     private LoginPrivacy loginPrivacy;
     private List<UUID> loggedPlayers = new ArrayList<>();
-    private Map<UUID, Integer> schedulersIds  = new HashMap<>();
+    private final Map<UUID, Integer> schedulersIds = new HashMap<>();
     private Database database;
 
     public void init() {
@@ -183,6 +183,7 @@ public class AuthListener implements Listener {
     private void onJoin(PlayerJoinEvent event) {
         teleportPlayerToLoginLocation(event.getPlayer());
         event.getPlayer().setInvulnerable(true);
+        event.getPlayer().setAllowFlight(true);
         cleanOldSession(event.getPlayer());
     }
 
@@ -266,6 +267,7 @@ public class AuthListener implements Listener {
 
     private void preparePlayerAfterAuthentication(Player player) {
         player.sendMessage(LoginPrivacy.convertColors("&cYou are Invulnerable for &f5 sec"));
+        player.setAllowFlight(false);
         Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(this.loginPrivacy, () -> {
             player.sendMessage(LoginPrivacy.convertColors("&cYou are no more Invulnerable"));
             player.setInvulnerable(false);
@@ -277,7 +279,7 @@ public class AuthListener implements Listener {
     private void onMove(PlayerMoveEvent event) {
         if (!this.authDisabled) {
             if (!loggedPlayers.contains(event.getPlayer().getUniqueId())) {
-                    event.setCancelled(true);
+                event.setCancelled(true);
             }
         }
     }
@@ -379,6 +381,4 @@ public class AuthListener implements Listener {
             }
         }
     }
-
-
 }
