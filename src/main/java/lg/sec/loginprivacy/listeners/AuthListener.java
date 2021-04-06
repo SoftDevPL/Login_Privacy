@@ -28,13 +28,13 @@ import java.util.stream.Collectors;
 public class AuthListener implements Listener {
 
     private final Map<UUID, Integer> scheduledTimers = new HashMap<>();
+    private final Map<UUID, Integer> schedulersIds = new HashMap<>();
     public AuthConfigurationConfig authConfigurationConfig;
     private int mainSchedulerId;
     private boolean authDisabled;
     private int joinMessageDelay;
     private LoginPrivacy loginPrivacy;
     private List<UUID> loggedPlayers = new ArrayList<>();
-    private final Map<UUID, Integer> schedulersIds = new HashMap<>();
     private Database database;
 
     public void init() {
@@ -48,8 +48,16 @@ public class AuthListener implements Listener {
         deleteAllNotExistingWorlds();
         addSchedulersToAllOnlinePlayersOnReload();
         updatePlayerLocationInScheduler();
+        teleportAllAuthPlayersOnLoginToLoginLocation();
     }
 
+    private void teleportAllAuthPlayersOnLoginToLoginLocation() {
+        for (Player player: Bukkit.getOnlinePlayers()) {
+            if (!loggedPlayers.contains(player.getUniqueId())) {
+                teleportPlayerToLoginLocation(player);
+            }
+        }
+    }
 
     private void addSchedulersToAllOnlinePlayersOnReload() {
         if (!this.authDisabled) {
@@ -217,10 +225,10 @@ public class AuthListener implements Listener {
                     Location location = this.database.getLastSeenLocation(player.getUniqueId());
                     if (location != null && location.getWorld() != null) {
                         player.teleport(location);
-                        preparePlayerAfterAuthentication(player);
                     }
                 }
                 updateLastSeenLocation(player);
+                preparePlayerAfterAuthentication(player);
                 player.sendMessage(LoginPrivacy.convertColors("&aYou successfully logged in"));
             } else {
                 player.sendMessage(LoginPrivacy.convertColors("&4Wrong Password"));
@@ -312,7 +320,7 @@ public class AuthListener implements Listener {
     }
 
     @EventHandler(priority = EventPriority.HIGHEST)
-    private void deathEvent(PlayerDeathEvent event) {
+    private void respawnEvent(PlayerDeathEvent event) {
         if (!this.authDisabled) {
             Player player = event.getEntity();
             if (!loggedPlayers.contains(player.getUniqueId())) {
@@ -324,7 +332,7 @@ public class AuthListener implements Listener {
     }
 
     @EventHandler(priority = EventPriority.HIGHEST)
-    private void deathEvent(PlayerRespawnEvent event) {
+    private void respawnEvent(PlayerRespawnEvent event) {
         if (!this.authDisabled) {
             Player player = event.getPlayer();
             if (!loggedPlayers.contains(player.getUniqueId())) {
